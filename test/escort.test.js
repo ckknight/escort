@@ -819,5 +819,15 @@ module.exports = {
         assert.response(app,
             { url: "/error", method: "GET" },
             { statusCode: 500 });
+    },
+    "allow lack of callback": function () {
+        var routing = escort();
+        routing.get("/", function (req, res) {
+            res.end("GET /");
+        });
+        
+        assert.response(connect(routing),
+            { url: "/", method: "GET" },
+            { body: "GET /" });
     }
 };
