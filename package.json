@@ -1,6 +1,6 @@
 {
   "name": "escort",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Routing and URL generation middleware",
   "keywords": ["framework", "web", "middleware", "connect", "escort"],
   "repository": "git://github.com/ckknight/escort.git",

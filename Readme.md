@@ -537,6 +537,50 @@
   
   This provides a very simplistic default 404 and error handler, but works without issue.
 
+## Using with Express
+  Express is built on top of Connect, but it tends to expect that You'll be using the connect.router routing framework.
+  This is very easy to overcome, though.
+  
+    var express = require("express"),
+        escort = require("escort");
+
+    var app = express.createServer();
+
+    var routing = escort();
+
+    app.dynamicHelpers({
+        url: routing.url,
+        messages: messages
+    });
+
+    app.configure(function () {
+        app.use(express.logger('\x1b[33m:method\x1b[0m \x1b[32m:url\x1b[0m :response-time'));
+        app.use(express.bodyParser());
+        app.use(express.methodOverride());
+        app.use(express.cookieParser());
+        app.use(express.session({ secret: 'keyboard cat' }));
+        app.use(routing);
+        app.use(express.static(__dirname + '/public'));
+        app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+    });
+
+    routing.get('/', function (req, res) {
+        res.render('index', {
+            message: "Hello, world"
+        });
+    });
+
+    if (!module.parent) {
+        app.listen(3000);
+        console.log('Express started on port 3000');
+    }
+  
+  The only real differences from a typical *Hello world* app using Express is that:
+  * `routing` is declared before `app.configure` (but not the configuration of it).
+  * `routing` is passed into `app.configure` instead of `app.router`.
+  * `routing.get` is used instead of `app.get`.
+  * `url` is provided to `dynamicHelpers`. This is optional, but nice inside views.
+
 ## Running Tests
 
 first:
