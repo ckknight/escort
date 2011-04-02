@@ -516,6 +516,27 @@
   
   Of course, you're free to structure your app however you like.
 
+## Running without Connect
+  Some of you may be wondering how to use Escort's routing framework without having to use
+  [Connect](https://github.com/senchalabs/connect). It's not actually required or even used by Escort, it merely
+  provides an interface that Connect accepts.
+  
+  If you do have the desire to run without Connect, the following code is an example of doing so:
+  
+    var http = require('http'),
+        escort = require('escort');
+    
+    var routing = escort(function(routes) {
+        routes.get("/", function(req, res) {
+            res.end("Welcome!");
+        })
+    });
+    http.createServer(function(req, res) {
+        escort(req, res);
+    }).listen(3000);
+  
+  This provides a very simplistic default 404 and error handler, but works without issue.
+
 ## Running Tests
 
 first:

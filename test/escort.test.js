@@ -1,6 +1,7 @@
 /*jshint strict: false */
 
 var connect = require("connect"),
+    http = require('http'),
     assert = require("assert"),
     escort = require("../index");
     
@@ -793,4 +794,30 @@ module.exports = {
             { url: "/do-something", method: "POST" },
             { body: "POST /do-something" });
     },
+    "run without connect": function () {
+        var routing = escort(function (routes) {
+            routes.get("/", function (req, res) {
+                res.end("GET /");
+            });
+            
+            routes.get("/error", function (req, res) {
+                throw new Error("This is an error");
+            });
+        });
+        var app = http.createServer(function (req, res) {
+            routing(req, res);
+        });
+        
+        assert.response(app,
+            { url: "/", method: "GET" },
+            { body: "GET /" });
+        
+        assert.response(app,
+            { url: "/not-found", method: "GET" },
+            { statusCode: 404 });
+        
+        assert.response(app,
+            { url: "/error", method: "GET" },
+            { statusCode: 500 });
+    }
 };
