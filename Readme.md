@@ -576,6 +576,7 @@
     }
   
   The only real differences from a typical *Hello world* app using Express is that:
+  
   * `routing` is declared before `app.configure` (but not the configuration of it).
   * `routing` is passed into `app.configure` instead of `app.router`.
   * `routing.get` is used instead of `app.get`.
