@@ -3,6 +3,14 @@
   Escort is a middleware for [Connect](https://github.com/senchalabs/connect) which provides routing and url generation
   capabilities.
 
+## Installation
+  
+  The easiest way to install is through [npm](http://npmjs.org/).
+  
+    $ npm install escort
+  
+  Alternatively, you can pull from [github](https://github.com/ckknight/escort) and place where necessary.
+
 ## What makes Escort different from other routing libraries
   
   * URL generation
@@ -591,6 +599,11 @@ first:
 then:
 
     $ make test
+
+## Issues
+
+  If you find any issues with Escort or have any suggestions or feedback, please feel free to visit the [github
+  issues](https://github.com/ckknight/escort/issues) page.
 
 ## License
 
