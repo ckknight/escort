@@ -829,5 +829,19 @@ module.exports = {
         assert.response(connect(routing),
             { url: "/", method: "GET" },
             { body: "GET /" });
+    },
+    "work with options but no callback": function () {
+        var routing = escort({ converters: { custom: escort.StringConverter } });
+        routing.get("post", "/{post:custom}", function (req, res, params) {
+            res.end("GET /" + params.post);
+        });
+        
+        exampleNames.forEach(function (name) {
+            assert.response(connect(routing),
+                { url: "/" + name, method: "GET" },
+                { body: "GET /" + name });
+            
+            assert.strictEqual("/" + name, routing.url.post(name));
+        });
     }
 };
