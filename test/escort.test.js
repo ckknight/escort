@@ -836,12 +836,38 @@ module.exports = {
             res.end("GET /" + params.post);
         });
         
+        var app = connect(routing);
+        
         exampleNames.forEach(function (name) {
-            assert.response(connect(routing),
+            assert.response(app,
                 { url: "/" + name, method: "GET" },
                 { body: "GET /" + name });
             
             assert.strictEqual("/" + name, routing.url.post(name));
+        });
+    },
+    "multiple parameters": function () {
+        var url;
+        var app = connect(escort(function (routes) {
+            url = routes.url;
+            routes.get("multi", "/{alpha}/{bravo}/{charlie}/{delta}", function (req, res, params) {
+                res.end("GET /" + params.alpha + "/" + params.bravo + "/" + params.charlie + "/" + params.delta);
+            });
+        }));
+        
+        exampleNames.forEach(function (alpha) {
+            exampleNames.forEach(function (bravo) {
+                exampleNames.forEach(function (charlie) {
+                    exampleNames.forEach(function (delta) {
+                        assert.response(app,
+                            { url: "/" + alpha + "/" + bravo + "/" + charlie + "/" + delta, method: "GET" },
+                            { body: "GET /" + alpha + "/" + bravo + "/" + charlie + "/" + delta });
+            
+                        assert.strictEqual("/" + alpha + "/" + bravo + "/" + charlie + "/" + delta, url.multi(alpha, bravo, charlie, delta));
+                        assert.strictEqual("/" + alpha + "/" + bravo + "/" + charlie + "/" + delta, url.multi({alpha: alpha, bravo: bravo, charlie: charlie, delta: delta}));
+                    });
+                });
+            });
         });
     }
 };
