@@ -1187,5 +1187,83 @@ module.exports = {
                 { url: "/posts/" + name.toUpperCase(), method: "GET" },
                 { statusCode: 301, headers: { Location: "/posts/" + name } });
         });
+    },
+    "string converter case sensitivity": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("alpha", "/alpha/{name:string}", function (req, res, params) {
+                    res.end("GET /alpha/" + params.name);
+                });
+                
+                routes.get("bravo", "/bravo/{name:string({allowUpperCase: true})}", function (req, res, params) {
+                    res.end("GET /bravo/" + params.name);
+                });
+            })
+        );
+        
+        ["Alpha", "Bravo", "Charlie"].forEach(function (name) {
+            assert.response(app,
+                { url: "/alpha/" + name.toLowerCase(), method: "GET" },
+                { body: "GET /alpha/" + name.toLowerCase() });
+            
+            assert.response(app,
+                { url: "/alpha/" + name, method: "GET" },
+                { statusCode: 301, headers: { Location: "/alpha/" + name.toLowerCase() } });
+            
+            assert.response(app,
+                { url: "/alpha/" + name.toUpperCase(), method: "GET" },
+                { statusCode: 301, headers: { Location: "/alpha/" + name.toLowerCase() } });
+            
+            assert.response(app,
+                { url: "/bravo/" + name.toLowerCase(), method: "GET" },
+                { body: "GET /bravo/" + name.toLowerCase() });
+            
+            assert.response(app,
+                { url: "/bravo/" + name, method: "GET" },
+                { body: "GET /bravo/" + name });
+
+            assert.response(app,
+                { url: "/bravo/" + name.toUpperCase(), method: "GET" },
+                { body: "GET /bravo/" + name.toUpperCase() });
+        });
+    },
+    "path converter case sensitivity": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("alpha", "/alpha/{name:path}", function (req, res, params) {
+                    res.end("GET /alpha/" + params.name);
+                });
+                
+                routes.get("bravo", "/bravo/{name:path({allowUpperCase: true})}", function (req, res, params) {
+                    res.end("GET /bravo/" + params.name);
+                });
+            })
+        );
+        
+        ["Alpha", "Alpha/Bravo", "Alpha/Bravo/Charlie"].forEach(function (name) {
+            assert.response(app,
+                { url: "/alpha/" + name.toLowerCase(), method: "GET" },
+                { body: "GET /alpha/" + name.toLowerCase() });
+            
+            assert.response(app,
+                { url: "/alpha/" + name, method: "GET" },
+                { statusCode: 301, headers: { Location: "/alpha/" + name.toLowerCase() } });
+            
+            assert.response(app,
+                { url: "/alpha/" + name.toUpperCase(), method: "GET" },
+                { statusCode: 301, headers: { Location: "/alpha/" + name.toLowerCase() } });
+            
+            assert.response(app,
+                { url: "/bravo/" + name.toLowerCase(), method: "GET" },
+                { body: "GET /bravo/" + name.toLowerCase() });
+            
+            assert.response(app,
+                { url: "/bravo/" + name, method: "GET" },
+                { body: "GET /bravo/" + name });
+
+            assert.response(app,
+                { url: "/bravo/" + name.toUpperCase(), method: "GET" },
+                { body: "GET /bravo/" + name.toUpperCase() });
+        });
     }
 };

@@ -227,9 +227,10 @@
   
   The default is the `string` converter, which is used when one is not specified.
   
-  * `string` - Parses any string that does not have a slash (`/`) in it. Can specify `minLength` and `maxLength`.
+  * `string` - Parses any string that does not have a slash (`/`) in it. Can specify `minLength`, `maxLength`, and
+               `allowUpperCase`.
   * `int` - Parses a numeric string. Converts to and from *Number*. Can specify `min`, `max`, and `fixedDigits`.
-  * `path` - Parses any string, even those with slashes (`/`) in them. Useful for wikis.
+  * `path` - Parses any string, even those with slashes (`/`) in them. Useful for wikis. Can specify `allowUpperCase`.
   * `any` - Parses one of a specified set of strings.
   
   ----
@@ -240,7 +241,7 @@
                 res.end("GET /posts/" + params.postSlug);
             });
 
-            routes.get("user", "/users/{username:string({minLength: 3, maxLength: 8})}", function(req, res, params) {
+            routes.get("user", "/users/{username:string({minLength: 3, maxLength: 8, allowUpperCase: true})}", function(req, res, params) {
                 res.end("GET /users/" + params.username);
             });
 
@@ -267,7 +268,7 @@
   as the slash (`/`) in it makes the route not recognize it properly.
   
   `/users/hi` will return a 404, won't ever even hit the route, since `hi` is too short. `/users/toolongofaname` will
-  also return a 404, since `toolongofaname` is too long. `/users/ckknight` will work perfectly fine.
+  also return a 404, since `toolongofaname` is too long. `/users/SomeGuy` will work perfectly fine.
   
   `/thread/some-thread` will return a 404, since `some-thread` isn't a number. `/thread/0` also returns a 404, since 0
   is less than the specified minimum of 1. `/thread/1` works fine, as does `/thread/1000000000`.
