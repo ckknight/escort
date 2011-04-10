@@ -33,6 +33,17 @@
     
     Logically divide segments of your app into different route submounts.
     
+  * Case-agnostic but aware
+  
+    Although domains are case-insensitive, URLs are not. `/foo` is a different URL from `/FOO` and from `/Foo`, and your
+    SEO (Search Engine Optimization) can be hurt by having all three serve the same content (assuming they're referenced
+    from other pages). Also, having your expected url (e.g. `/foo`) work but the other casings not work can be confusing
+    for users in certain cases.
+    
+    Escort takes the approach of allowing all three URLs to work, but if it is not exactly case equivalent to the
+    expected route, then a 301 Moved Permanently will redirect to the correct one. This means that if someone visits
+    `/FOO`, they are immediately redirected to `/foo`. Since it is a 301, any SEO rankings should also update.
+    
   * Performance concerns
     
     Routing tends to be hit every request, since any caching that occurs typically starts inside one's route callback.

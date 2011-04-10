@@ -1102,5 +1102,65 @@ module.exports = {
         assert.response(app,
             { url: "/other/", method: "GET" },
             { statusCode: 404 });
-    }
+    },
+    "redirect on case difference (static)": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/Thing", function (req, res) {
+                    res.end("GET /Thing");
+                });
+            })
+        );
+        
+        assert.response(app,
+            { url: "/Thing", method: "GET" },
+            { statusCode: 200, body: "GET /Thing" });
+        
+        assert.response(app,
+            { url: "/thing", method: "GET" },
+            { statusCode: 301, header: { Location: "/Thing" } });
+        
+        assert.response(app,
+            { url: "/THING", method: "GET" },
+            { statusCode: 301, header: { Location: "/Thing" } });
+    },
+    "redirect on case difference (dynamic)": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("thing", "/Thing/{item}", function (req, res, params) {
+                    res.end("GET /Thing/" + params.item);
+                });
+                
+                routes.get("other", "/Thing/{item}/Blah", function (req, res, params) {
+                    res.end("GET /Thing/" + params.item + "/Blah");
+                });
+            })
+        );
+        
+        exampleNames.forEach(function (name) {
+            assert.response(app,
+                { url: "/Thing/" + name, method: "GET" },
+                { statusCode: 200, body: "GET /Thing/" + name });
+        
+            assert.response(app,
+                { url: "/thing/" + name, method: "GET" },
+                { statusCode: 301, header: { Location: "/Thing/" + name } });
+        
+            assert.response(app,
+                { url: "/THING/" + name, method: "GET" },
+                { statusCode: 301, header: { Location: "/Thing/" + name } });
+                
+            assert.response(app,
+                { url: "/Thing/" + name + "/Blah", method: "GET" },
+                { statusCode: 200, body: "GET /Thing/" + name + "/Blah" });
+        
+            assert.response(app,
+                { url: "/thing/" + name + "/blah", method: "GET" },
+                { statusCode: 301, header: { Location: "/Thing/" + name + "/Blah" } });
+        
+            assert.response(app,
+                { url: "/THING/" + name + "/BLAH", method: "GET" },
+                { statusCode: 301, header: { Location: "/Thing/" + name + "/Blah" } });
+        });
+    },
 };
