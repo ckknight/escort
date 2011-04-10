@@ -1075,7 +1075,7 @@ module.exports = {
         
         assert.response(app,
             { url: "/thing/", method: "GET" },
-            { statusCode: 301, header: { Location: "/thing" } });
+            { statusCode: 301, headers: { Location: "/thing" } });
     },
     "retrieving a known URL with a slash should return a MovedPermanently and preserve querystring": function () {
         var app = connect(
@@ -1088,7 +1088,7 @@ module.exports = {
 
         assert.response(app,
             { url: "/thing/?hello=there", method: "GET" },
-            { statusCode: 301, header: { Location: "/thing?hello=there" } });
+            { statusCode: 301, headers: { Location: "/thing?hello=there" } });
     },
     "retrieving an unknown URL with a slash should return a NotFound": function () {
         var app = connect(
@@ -1118,11 +1118,11 @@ module.exports = {
         
         assert.response(app,
             { url: "/thing", method: "GET" },
-            { statusCode: 301, header: { Location: "/Thing" } });
+            { statusCode: 301, headers: { Location: "/Thing" } });
         
         assert.response(app,
             { url: "/THING", method: "GET" },
-            { statusCode: 301, header: { Location: "/Thing" } });
+            { statusCode: 301, headers: { Location: "/Thing" } });
     },
     "redirect on case difference (dynamic)": function () {
         var app = connect(
@@ -1144,11 +1144,11 @@ module.exports = {
         
             assert.response(app,
                 { url: "/thing/" + name, method: "GET" },
-                { statusCode: 301, header: { Location: "/Thing/" + name } });
+                { statusCode: 301, headers: { Location: "/Thing/" + name } });
         
             assert.response(app,
                 { url: "/THING/" + name, method: "GET" },
-                { statusCode: 301, header: { Location: "/Thing/" + name } });
+                { statusCode: 301, headers: { Location: "/Thing/" + name } });
                 
             assert.response(app,
                 { url: "/Thing/" + name + "/Blah", method: "GET" },
@@ -1156,11 +1156,36 @@ module.exports = {
         
             assert.response(app,
                 { url: "/thing/" + name + "/blah", method: "GET" },
-                { statusCode: 301, header: { Location: "/Thing/" + name + "/Blah" } });
+                { statusCode: 301, headers: { Location: "/Thing/" + name + "/Blah" } });
         
             assert.response(app,
                 { url: "/THING/" + name + "/BLAH", method: "GET" },
-                { statusCode: 301, header: { Location: "/Thing/" + name + "/Blah" } });
+                { statusCode: 301, headers: { Location: "/Thing/" + name + "/Blah" } });
         });
     },
+    "any converter case sensitivity": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("post", "/posts/{id:any('Alpha', 'Bravo', 'Charlie')}", function (req, res, params) {
+                    assert.strictEqual("string", typeof params.id);
+
+                    res.end("GET /posts/" + params.id);
+                });
+            })
+        );
+        
+        ["Alpha", "Bravo", "Charlie"].forEach(function (name) {
+            assert.response(app,
+                { url: "/posts/" + name, method: "GET" },
+                { body: "GET /posts/" + name });
+            
+            assert.response(app,
+                { url: "/posts/" + name.toLowerCase(), method: "GET" },
+                { statusCode: 301, headers: { Location: "/posts/" + name } });
+            
+            assert.response(app,
+                { url: "/posts/" + name.toUpperCase(), method: "GET" },
+                { statusCode: 301, headers: { Location: "/posts/" + name } });
+        });
+    }
 };
