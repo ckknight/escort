@@ -85,6 +85,16 @@
   It will only respond when a `GET` is sent to `/`. If you were to send a `POST`, it would not respond be providing
   `"Hello, world!"`. Also, if you were to visit any other URL, it wouldn't respond either, since those have not been
   bound yet.
+  
+  *Note: the routes parameter can be removed in favor of using `this`, as in the following example*
+  
+    connect(
+        escort(function() {
+            this.get("/", function(req, res) {
+                res.end("Hello, world!");
+            });
+        })
+    ).listen(3000);
 
 ## Dynamic parameters
 
@@ -367,17 +377,17 @@
         escort(function(routes) {
             url = routes.url;
             
-            routes.namespace("/pages", function(pages) {
-                forums.get("", function(req, res) {
+            routes.submount("/pages", function(pages) {
+                pages.get("", function(req, res) {
                     res.end("Page listing here");
                 });
                 
-                pages.namespace("/{pageSlug}", function(page) {
-                    page.get("page", "", function(req, res, params) {
+                this.submount("/{pageSlug}", function() {
+                    this.get("page", "", function(req, res, params) {
                         res.end("Page details for " + params.pageSlug);
                     });
                     
-                    page.bind("pageEdit", "/edit", {
+                    this.bind("pageEdit", "/edit", {
                         get: function(req, res, params) {
                             res.end("Editing page " + params.pageSlug);
                         },
@@ -393,6 +403,9 @@
             url.pageEdit("thing") === "/pages/thing/edit";
         })
     ).listen(3000);
+
+  *Note: both `this` and the first argument of the `submount` callback are the same thing. Use whichever one you're
+  more comfortable with.*
 
 ## Optional route segments
   

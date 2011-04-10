@@ -1288,5 +1288,28 @@ module.exports = {
                 { url: "/thing/" + name, method: "GET" },
                 { statusCode: 301, headers: { Location: "/thing/" + name + "/" } });
         });
+    },
+    "use this instread of first argument for configuration": function () {
+        var app = connect(
+            escort(function () {
+                this.get("/", function (req, res) {
+                    res.end("GET /");
+                });
+                
+                this.submount("/alpha", function () {
+                    this.get("", function (req, res) {
+                        res.end("GET /alpha");
+                    });
+                });
+            })
+        );
+        
+        assert.response(app,
+            { url: "/", method: "GET" },
+            { body: "GET /" });
+        
+        assert.response(app,
+            { url: "/alpha", method: "GET" },
+            { body: "GET /alpha" });
     }
 };
