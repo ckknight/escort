@@ -444,8 +444,6 @@
   
     connect(
         escort(function(routes) {
-            url = routes.url;
-            
             routes.get("/", function(req, res) {
                 res.end("Welcome!");
             });
@@ -458,6 +456,31 @@
     ).listen(3000);
   
   Now visiting `/` will properly tell you `"Welcome!"`, but visiting any other URL will give you your custom 404.
+
+### Data-driven Not Founds
+
+  Often, you may have a route with parameters that requires data to be pulled down from a database. In the event that
+  the item you are retrieving does not exist, you should be properly returning a 404 Not Found. Rather than having to
+  replicate the logic of your Not Found handler, you can simply call `next` which will pass on to the next middleware
+  (or your defined Not Found handler).
+  
+    connect(
+        escort(function(routes) {
+            routes.get("/posts/{slug}", function(req, res, params, next) {
+                Post.findOne({ slug: params.slug }, function(err, post) {
+                    if (err) {
+                        // an error occurred
+                        throw err;
+                    } else if (post === null) {
+                        // we didn't get a result back
+                        next();
+                    }
+                    
+                    res.end("Retrieved post: " + post);
+                })
+            });
+        })
+    ).listen(3000);
 
 ## Method Not Allowed (405).
   

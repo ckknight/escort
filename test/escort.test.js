@@ -357,7 +357,7 @@ module.exports = {
         assert.strictEqual("/posts/yes", url.post(true));
         assert.strictEqual("/posts/no", url.post(false));
     },
-    "notFound and methodNotAllowed handlers": function () {
+    "notFound handler": function () {
         var app = connect(
             escort(function (routes) {
                 routes.get("/", function (req, res) {
@@ -367,6 +367,47 @@ module.exports = {
                 routes.notFound(function (req, res, next) {
                     res.writeHead(404);
                     res.end("Not found, oh noes!");
+                });
+            })
+        );
+        
+        assert.response(app,
+            { url: "/", method: "GET" },
+            { body: "Found the root" });
+
+        assert.response(app,
+            { url: "/other", method: "GET" },
+            { body: "Not found, oh noes!", statusCode: 404 });
+    },
+    "calling next in the notFound handler should go to the next middleware": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res) {
+                    res.end("Found the root");
+                });
+                
+                routes.notFound(function (req, res, next) {
+                    next();
+                });
+            }),
+            function (req, res) {
+                res.end("Next middleware");
+            }
+        );
+        
+        assert.response(app,
+            { url: "/", method: "GET" },
+            { body: "Found the root" });
+
+        assert.response(app,
+            { url: "/other", method: "GET" },
+            { body: "Next middleware" });
+    },
+    "methodNotAllowed handler": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res) {
+                    res.end("Found the root");
                 });
                 
                 routes.methodNotAllowed(function (req, res, next) {
@@ -383,10 +424,30 @@ module.exports = {
         assert.response(app,
             { url: "/", method: "POST" },
             { body: "No such method, nuh-uh.", statusCode: 405 });
+    },
+    "calling next in the methodNotAllowed handler should go to the next middleware": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res) {
+                    res.end("Found the root");
+                });
+
+                routes.methodNotAllowed(function (req, res, next) {
+                    next();
+                });
+            }),
+            function (req, res) {
+                res.end("Next middleware");
+            }
+        );
 
         assert.response(app,
-            { url: "/other", method: "GET" },
-            { body: "Not found, oh noes!", statusCode: 404 });
+            { url: "/", method: "GET" },
+            { body: "Found the root" });
+
+        assert.response(app,
+            { url: "/", method: "POST" },
+            { body: "Next middleware" });
     },
     "dynamic caching": function () {
         var doneParts = {};
@@ -869,5 +930,99 @@ module.exports = {
                 });
             });
         });
-    }
+    },
+    "calling next will call the next middleware": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res, params, next) {
+                    next();
+                });
+            }),
+            function (req, res) {
+                res.end("Next middleware");
+            }
+        );
+        
+        assert.response(app,
+            { url: "/", method: "GET"},
+            { body: "Next middleware" });
+    },
+    "calling next will not call an unreferenced middleware": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res, params, next) {
+                    next();
+                });
+            }),
+            function (req, res) {
+                res.end("Next middleware");
+            },
+            function (req, res) {
+                res.end("Unreferenced");
+            }
+        );
+        
+        assert.response(app,
+            { url: "/", method: "GET"},
+            { body: "Next middleware" });
+    },
+    "calling next will call the middleware after next": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res, params, next) {
+                    next();
+                });
+            }),
+            function (req, res, next) {
+                next();
+            },
+            function (req, res) {
+                res.end("Next middleware");
+            }
+        );
+        
+        assert.response(app,
+            { url: "/", method: "GET" },
+            { body: "Next middleware" });
+    },
+    "calling next will call the notFound handler": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res, params, next) {
+                    next();
+                });
+                
+                routes.notFound(function (req, res) {
+                    res.end("Not found!");
+                });
+            }),
+            function (req, res) {
+                res.end("Should not be hit");
+            }
+        );
+        
+        assert.response(app,
+            { url: "/", method: "GET" },
+            { body: "Not found!" });
+    },
+    "calling next will call the next middleware after the notFound handler": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res, params, next) {
+                    next();
+                });
+                
+                routes.notFound(function (req, res, next) {
+                    next();
+                });
+            }),
+            function (req, res) {
+                res.end("Next middleware");
+            }
+        );
+        
+        assert.response(app,
+            { url: "/", method: "GET" },
+            { body: "Next middleware" });
+    },
 };
