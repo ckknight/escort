@@ -1005,6 +1005,50 @@ module.exports = {
             { url: "/", method: "GET" },
             { body: "Not found!" });
     },
+    "calling next with an error will not call the notFound handler": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res, params, next) {
+                    next(new Error("Blah!"));
+                });
+                
+                routes.notFound(function (req, res) {
+                    res.end("Not found!");
+                });
+            }),
+            function (req, res) {
+                res.end("Should not be hit");
+            }
+        );
+        
+        assert.response(app,
+            { url: "/", method: "GET" },
+            { statusCode: 500 });
+    },
+    "calling next with an error will call the first middleware that can handle it": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res, params, next) {
+                    next(new Error("Blah!"));
+                });
+                
+                routes.notFound(function (req, res) {
+                    res.end("Not found!");
+                });
+            }),
+            function (req, res) {
+                res.end("Should not be hit");
+            },
+            function (err, req, res, next) {
+                res.writeHead(500);
+                res.end("Oh noes!");
+            }
+        );
+        
+        assert.response(app,
+            { url: "/", method: "GET" },
+            { statusCode: 500, body: "Oh noes!" });
+    },
     "calling next will call the next middleware after the notFound handler": function () {
         var app = connect(
             escort(function (routes) {
@@ -1024,6 +1068,34 @@ module.exports = {
         assert.response(app,
             { url: "/", method: "GET" },
             { body: "Next middleware" });
+    },
+    "calling next in notFound with an error will call the first middleware that can handle it": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res, params, next) {
+                    next();
+                });
+                
+                routes.notFound(function (req, res, next) {
+                    next(new Error("Stuff"));
+                });
+            }),
+            function (req, res) {
+                res.end("Shouldn't be hit");
+            },
+            function (err, req, res, next) {
+                res.writeHead(500);
+                res.end("Oh noes!");
+            }
+        );
+        
+        assert.response(app,
+            { url: "/", method: "GET" },
+            { statusCode: 500, body: "Oh noes!" });
+        
+        assert.response(app,
+            { url: "/other", method: "GET" },
+            { statusCode: 500, body: "Oh noes!" });
     },
     "two slashes in a URL is an error": function () {
         var gotError = false;
