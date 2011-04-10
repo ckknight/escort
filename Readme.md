@@ -473,7 +473,7 @@
                         throw err;
                     } else if (post === null) {
                         // we didn't get a result back
-                        next();
+                        return next();
                     }
                     
                     res.end("Retrieved post: " + post);
