@@ -1025,19 +1025,6 @@ module.exports = {
             { url: "/", method: "GET" },
             { body: "Next middleware" });
     },
-    "ending a URL in a slash is an error": function () {
-        var gotError = false;
-        escort(function (routes) {
-            try {
-                routes.get("/thing/", function (req, res) {
-                    res.end("GET /thing/");
-                });
-            } catch (err) {
-                gotError = true;
-            }
-        });
-        assert.eql(true, gotError);
-    },
     "two slashes in a URL is an error": function () {
         var gotError = false;
         escort(function (routes) {
@@ -1264,6 +1251,42 @@ module.exports = {
             assert.response(app,
                 { url: "/bravo/" + name.toUpperCase(), method: "GET" },
                 { body: "GET /bravo/" + name.toUpperCase() });
+        });
+    },
+    "ending a URL in a slash (static)": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/thing/", function (req, res) {
+                    res.end("GET /thing/");
+                });
+            })
+        );
+        
+        assert.response(app,
+            { url: "/thing/", method: "GET" },
+            { body: "GET /thing/" });
+        
+        assert.response(app,
+            { url: "/thing", method: "GET" },
+            { statusCode: 301, headers: { Location: "/thing/" } });
+    },
+    "ending a URL in a slash (dynamic)": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("thing", "/thing/{name}/", function (req, res, params) {
+                    res.end("GET /thing/" + params.name + "/");
+                });
+            })
+        );
+        
+        exampleNames.forEach(function (name) {
+            assert.response(app,
+                { url: "/thing/" + name + "/", method: "GET" },
+                { body: "GET /thing/" + name + "/" });
+        
+            assert.response(app,
+                { url: "/thing/" + name, method: "GET" },
+                { statusCode: 301, headers: { Location: "/thing/" + name + "/" } });
         });
     }
 };
