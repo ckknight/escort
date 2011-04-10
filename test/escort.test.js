@@ -1025,4 +1025,82 @@ module.exports = {
             { url: "/", method: "GET" },
             { body: "Next middleware" });
     },
+    "ending a URL in a slash is an error": function () {
+        var gotError = false;
+        escort(function (routes) {
+            try {
+                routes.get("/thing/", function (req, res) {
+                    res.end("GET /thing/");
+                });
+            } catch (err) {
+                gotError = true;
+            }
+        });
+        assert.eql(true, gotError);
+    },
+    "two slashes in a URL is an error": function () {
+        var gotError = false;
+        escort(function (routes) {
+            try {
+                routes.get("/alpha//bravo", function (req, res) {
+                    res.end("GET /alpha//bravo");
+                });
+            } catch (err) {
+                gotError = true;
+            }
+        });
+        assert.eql(true, gotError);
+    },
+    "including a question mark in a URL is an error": function () {
+        var gotError = false;
+        escort(function (routes) {
+            try {
+                routes.get("/thing?hey", function (req, res) {
+                    res.end("GET /thing?hey");
+                });
+            } catch (err) {
+                gotError = true;
+            }
+        });
+        assert.eql(true, gotError);
+    },
+    "retrieving a known URL with a slash should return a MovedPermanently": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/thing", function (req, res) {
+                    res.end("GET /thing");
+                });
+            })
+        );
+        
+        assert.response(app,
+            { url: "/thing/", method: "GET" },
+            { statusCode: 301, header: { Location: "/thing" } });
+    },
+    "retrieving a known URL with a slash should return a MovedPermanently and preserve querystring": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/thing", function (req, res) {
+                    res.end("GET /thing");
+                });
+            })
+        );
+
+        assert.response(app,
+            { url: "/thing/?hello=there", method: "GET" },
+            { statusCode: 301, header: { Location: "/thing?hello=there" } });
+    },
+    "retrieving an unknown URL with a slash should return a NotFound": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/thing", function (req, res) {
+                    res.end("GET /thing");
+                });
+            })
+        );
+        
+        assert.response(app,
+            { url: "/other/", method: "GET" },
+            { statusCode: 404 });
+    }
 };
