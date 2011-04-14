@@ -7,6 +7,7 @@ var connect = require("connect"),
     
 var methods = ["get", "post", "put", "delete"];
 var exampleNames = ["neil", "bob", "windsor"];
+var exampleUnicodeNames = ["nøgel", "über", "cliché"];
 
 module.exports = {
     "methods static": function () {
@@ -1361,7 +1362,7 @@ module.exports = {
                 { statusCode: 301, headers: { Location: "/thing/" + name + "/" } });
         });
     },
-    "use this instread of first argument for configuration": function () {
+    "use this instead of first argument for configuration": function () {
         var app = connect(
             escort(function () {
                 this.get("/", function (req, res) {
@@ -1383,5 +1384,68 @@ module.exports = {
         assert.response(app,
             { url: "/alpha", method: "GET" },
             { body: "GET /alpha" });
-    }
+    },
+    "handle unicode parameters": function () {
+        var url;
+        var app = connect(
+            escort(function () {
+                url = this.url;
+                this.get("post", "/unicode/{name:string({allowNonASCII: true})}", function (req, res, params) {
+                    res.end("GET /unicode/" + params.name);
+                });
+            })
+        );
+        
+        exampleUnicodeNames.forEach(function (name) {
+            assert.strictEqual("/unicode/" + encodeURIComponent(name), url.post(name));
+            
+            assert.response(app,
+                { url: "/unicode/" + encodeURIComponent(name), method: "GET" },
+                { body: "GET /unicode/" + name });
+        });
+    },
+    "handle unicode literal paths": function () {
+        var url;
+        var app = connect(
+            escort(function () {
+                url = this.url;
+                exampleUnicodeNames.forEach(function (name) {
+                    this.get(name, "/" + name, function (req, res) {
+                        res.end("GET /" + name);
+                    });
+                }, this);
+            })
+        );
+        
+        exampleUnicodeNames.forEach(function (name) {
+            assert.strictEqual("/" + encodeURIComponent(name), url[name]());
+            
+            assert.response(app,
+                { url: "/" + encodeURIComponent(name), method: "GET" },
+                { body: "GET /" + name });
+        });
+    },
+    "handle unicode literal paths (dynamic)": function () {
+        var url;
+        var app = connect(
+            escort(function () {
+                url = this.url;
+                exampleUnicodeNames.forEach(function (name) {
+                    this.get(name, "/pöst/{postName:string({allowNonASCII: true})}/" + name, function (req, res, params) {
+                        res.end("GET /pöst/" + params.postName + "/" + name);
+                    });
+                }, this);
+            })
+        );
+        
+        exampleUnicodeNames.forEach(function (postName) {
+            exampleUnicodeNames.forEach(function (name) {
+                assert.strictEqual("/" + encodeURIComponent("pöst") + "/" + encodeURIComponent(postName) + "/" + encodeURIComponent(name), url[name](postName));
+            
+                assert.response(app,
+                    { url: "/" + encodeURIComponent("pöst") + "/" + encodeURIComponent(postName) + "/" + encodeURIComponent(name), method: "GET" },
+                    { body: "GET /pöst/" + postName + "/" + name });
+            });
+        });
+    },
 };

@@ -43,6 +43,11 @@
     Escort takes the approach of allowing all three URLs to work, but if it is not exactly case equivalent to the
     expected route, then a 301 Moved Permanently will redirect to the correct one. This means that if someone visits
     `/FOO`, they are immediately redirected to `/foo`. Since it is a 301, any SEO rankings should also update.
+  
+  * Unicode-aware
+  
+    You are fully able to have unicode parts in your URLs without harm, and you register them as if they are normal
+    paths. You can also very capably accept unicode parts in the dynamic parameters as well.
     
   * Performance concerns
     
@@ -461,6 +466,34 @@
   _Note: a better way of determining what format someone wants is to check their Accept header, so I recommend you do
   that for your non-example apps._
 
+## Unicode
+  
+  You can have unicode (non-ASCII) characters in both the literal segments of your paths as well as in the dynamic
+  segments of your path.
+  
+    var url;
+    connect(
+        escort(function(routes) {
+            url = routes.url;
+            
+            routes.get("uber", "/über", function(req, res) {
+                res.end("You're super-cool.");
+            });
+            routes.get("post", "/posts/{name:string({allowNonASCII: true})}", function(req, res, params) {
+                res.end("You hit the " + params.name + " post");
+            });
+        })
+    ).listen(3000);
+    
+    url.uber() === "/%C3%BCber";
+    url.post("cliché") === "/posts/clich%C3%A9";
+  
+  Visiting `/über`, which is actually `/%C3%BCber`, will respond with "You're super-cool".
+  
+  Visiting `/posts/cliché`, which is actually `/posts/clich%C3%A9`, will respond with "You hit the cliché post".
+  
+  All the URL encoding and decoding is transparently taken care of without issue.
+
 ## Not Found (404).
   
   By default, the `notFound` handler passes to the next middleware, which has an opportunity to handle it.
@@ -494,8 +527,8 @@
             routes.get("/posts/{slug}", function(req, res, params, next) {
                 Post.findOne({ slug: params.slug }, function(err, post) {
                     if (err) {
-                        // an error occurred
-                        throw err;
+                        // an error occurred, pass it to the next middleware to throw a 500.
+                        return next(err);
                     } else if (post === null) {
                         // we didn't get a result back
                         return next();
