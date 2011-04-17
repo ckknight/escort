@@ -68,6 +68,14 @@
     incoming URL matches the prefix will cut down lookups by a significant amount in the general case (varying from app
     to app). Not having to traverse all the `/pages/` routes for something that we know is under `/forums/` removes a
     significant amount of work.
+  
+  * Client-side URL generation
+    
+    Escort provides a way to serialize its URL structure such that a client-side library can interpret that JSON data
+    and be able to generate URLs. This is extremely handy if you have a web app where you generate HTML rather than
+    leave it up to the server.
+    
+    The `escort-client.js` is provided for you that can be used in the browser.
 
 ## Hello, world!
   
@@ -312,6 +320,9 @@
         toUrl: function (value) {
             // return a String
             return encodeURIComponent(value);
+        },
+        serialize: function () {
+            return { type: "customName" };
         }
     }
   
@@ -333,6 +344,9 @@
             },
             toUrl: function (value) {
                 return value ? trueName : falseName;
+            },
+            serialize: function () {
+                return { type: "bool" };
             }
         };
     };
@@ -670,6 +684,72 @@
   * `routing` is passed into `app.configure` instead of `app.router`.
   * `routing.get` is used instead of `app.get`.
   * `url` is provided to `dynamicHelpers`. This is optional, but nice inside views.
+
+## Client-side URL generation
+  
+  First, you'll need to serialize the URL structure of your webapp. This can be done at any point in your app's
+  lifecycle, even in its own exposed route, as long as it occurs after configuration.
+  
+  As you may notice, the URL generation API is the exact same once the `url` object has been created.
+
+### In-development example
+  For development, it may be handy to have your URL JSON dump accessible by its own route, but once you go into
+  production/staging, I strongly recommend placing the serialized dump directly into your client javascript files.
+  
+  Node.js code
+  
+    connect(
+        escort(function() {
+            this.get("root", "/", function(req, res) {
+                res.end("GET /");
+            });
+            
+            this.get("post", "/{post}", function(req, res, params) {
+                res.end("GET /" + params.post);
+            });
+            
+            if (process.env.NODE_ENV !== "production") {
+                // we only want to expose this during development
+                
+                var serialize = this.serialize;
+                this.get("routeExport", "/routes.js", function(req, res) {
+                    res.writeHead(200, {"Content-Type", "text/javascript"});
+                    res.end("window.url = escortClient.generateUrlObject(" + JSON.stringify(serialize()) + ")");
+                });
+            }
+        })
+    ).listen(3000);
+  
+  Browser HTML code
+  
+    <script src="/static/scripts/escort-client.js"></script>
+    <script src="/routes.js"></script>
+    <script>
+        url.root() === "/";
+        url.post("hey") === "/hey";
+        url.post({ post: "hey" }) === "/hey";
+    </script>
+
+### Production example
+  You'll actually want to concatenate all your scripts as well as minify them when launching your production app, but
+  I'm leaving that part out for clarity.
+  
+  The Node.js code is the same as above, since `/routes.js` is not available during production.
+  
+  Browser Javascript code (url-routes.js)
+  
+    // sticking this on the global window object is probably a bad idea.
+    window.url = escortClient.generateUrlObject(/* paste your blob into here */);
+  
+  Browser HTML code
+  
+    <script src="/static/scripts/escort-client.js"></script>
+    <script src="/static/scripts/url-routes.js"></script>
+    <script>
+        url.root() === "/";
+        url.post("hey") === "/hey";
+        url.post({ post: "hey" }) === "/hey";
+    </script>
 
 ## Running Tests
 

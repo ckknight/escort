@@ -9,6 +9,12 @@ var methods = ["get", "post", "put", "delete"];
 var exampleNames = ["neil", "bob", "windsor"];
 var exampleUnicodeNames = ["nøgel", "über", "cliché"];
 
+var makeBadString = (function (Ctor) {
+    return function (value) {
+        return new Ctor(value);
+    };
+}(String));
+
 module.exports = {
     "methods static": function () {
         var url;
@@ -86,6 +92,8 @@ module.exports = {
                 
                 assert.strictEqual("/" + name + "/" + method, url["name_" + method](name));
                 assert.strictEqual("/" + name + "/" + method, url["name_" + method]({ name: name }));
+                assert.strictEqual("/" + name + "/" + method, url["name_" + method](makeBadString(name)));
+                assert.strictEqual("/" + name + "/" + method, url["name_" + method]({ name: makeBadString(name) }));
                 
                 methods.forEach(function (otherMethod) {
                     if (method !== otherMethod) {
@@ -284,6 +292,11 @@ module.exports = {
                 assert.response(app,
                     { url: "/posts/" + part, method: "GET" },
                     { body: "GET /posts/" + part });
+                assert.strictEqual("/posts/" + part, url.post(part));
+            } else {
+                assert.response(app,
+                    { url: "/posts/" + part, method: "GET" },
+                    { statusCode: 301, headers: { Location: "/posts/" + part.substr(0, part.length - 1) } });
             }
         }
     },
@@ -326,6 +339,9 @@ module.exports = {
                 },
                 toUrl: function (value) {
                     return value ? "yes" : "no";
+                },
+                serialize: function () {
+                    return { type: "bool" };
                 }
             };
         };
@@ -463,6 +479,9 @@ module.exports = {
                 },
                 toUrl: function (value) {
                     return value;
+                },
+                serialize: function () {
+                    return { type: "thing" };
                 }
             };
         };
@@ -1448,4 +1467,134 @@ module.exports = {
             });
         });
     },
+    "serialize": function () {
+        var serialization;
+        var app = connect(
+            escort(function () {
+                this.get("/", function (req, res) {
+                    res.end("GET /");
+                });
+                
+                this.get("/posts", function (req, res) {
+                    res.end("GET /posts");
+                });
+                
+                this.get("post", "/posts/{post}", function (req, res, params) {
+                    res.end("GET /posts/" + params.post);
+                });
+                
+                this.get("optional", "/optional[/{dynamic}]", function (req, res, params) {
+                    res.end("optional");
+                });
+                
+                this.get("multi", "/multi/{alpha}/{bravo}/{charlie}", function (req, res, params) {
+                    res.end("multi");
+                });
+                
+                this.get("int", "/int/{value:int({fixedDigits: 4})}", function (req, res, params) {
+                    res.end("int");
+                });
+                
+                this.get("any", "/any/{value:any('alpha', 'bravo', 'charlie')}", function (req, res, params) {
+                    res.end("any");
+                });
+                
+                this.get("path", "/path/{value:path}", function (req, res, params) {
+                    res.end("path");
+                });
+                
+                this.get("trailing", "/alpha/{value}/bravo", function (req, res, params) {
+                    res.end("trailing");
+                });
+                
+                serialization = this.serialize();
+            })
+        );
+        
+        assert.deepEqual({
+            root: [{
+                path: "/"
+            }],
+            posts: [{
+                path: "/posts"
+            }],
+            post: [{
+                literals: ["/posts/"],
+                params: [
+                    {
+                        name: "post",
+                        type: "string"
+                    }
+                ]
+            }],
+            optional: [
+                {
+                    path: "/optional"
+                },
+                {
+                    literals: ["/optional/"],
+                    params: [
+                        {
+                            name: "dynamic",
+                            type: "string"
+                        }
+                    ]
+                }
+            ],
+            multi: [{
+                literals: ["/multi/", "/", "/"],
+                params: [
+                    {
+                        name: "alpha",
+                        type: "string",
+                    },
+                    {
+                        name: "bravo",
+                        type: "string",
+                    },
+                    {
+                        name: "charlie",
+                        type: "string",
+                    }
+                ]
+            }],
+            int: [{
+                literals: ["/int/"],
+                params: [
+                    {
+                        name: "value",
+                        type: "int",
+                        fixedDigits: 4
+                    }
+                ]
+            }],
+            any: [{
+                literals: ["/any/"],
+                params: [
+                    {
+                        name: "value",
+                        type: "any"
+                    }
+                ]
+            }],
+            path: [{
+                literals: ["/path/"],
+                params: [
+                    {
+                        name: "value",
+                        type: "path"
+                    }
+                ]
+            }],
+            trailing: [{
+                literals: ["/alpha/", "/bravo"],
+                params: [
+                    {
+                        name: "value",
+                        type: "string"
+                    }
+                ]
+            }]
+        }, serialization);
+    }
 };
