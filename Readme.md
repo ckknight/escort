@@ -635,7 +635,7 @@
         })
     });
     http.createServer(function(req, res) {
-        escort(req, res);
+        routing(req, res);
     }).listen(3000);
   
   This provides a very simplistic default 404 and error handler, but works without issue.
