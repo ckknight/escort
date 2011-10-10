@@ -17,7 +17,7 @@
     
     Because routing from URLs to callbacks is only half of the problem, you also need to generate URLs.
     
-    Hardcoding the URLs (in your views, likely) can be a pain to update if ever your URLs. Also, if you have dynamic
+    Hardcoding the URLs (in your views, likely) can be a pain to update if ever your URLs change. Also, if you have dynamic
     URLs, knowing the correct and safe syntax to convert the Javascript values to a safe URL can be tricky.
     
   * Converters
