@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/ckknight/escort.png)](http://travis-ci.org/ckknight/escort)
 # Escort
 
   Escort is a middleware for [Connect](https://github.com/senchalabs/connect) which provides routing and url generation
